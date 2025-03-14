@@ -12,10 +12,8 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const pageSize = 2;
+  const pageSize = 6;
   const [categories, setCategories] = useState([]);
-  const [colors, setColors] = useState([]);
-  const [sizes, setSizes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalElements,setTotalElements] = useState(0)
@@ -69,14 +67,18 @@ export default function Products() {
       url = `http://localhost:8080/api/products/sort-price-desc?currentPage=${currentPage}&pageSize=${pageSize}`;
 
     }
-    if (selectedCategories.length > 0 || selectedColor != null || selectedSize != null || priceRange[1] != 500) {
+    if (selectedCategories.length > 0 || priceRange[1] != 500) {
         const params = new URLSearchParams();
-        if (selectedCategories.length >  0) params.append("category", selectedCategories.toString());
-        if (selectedColor != null) params.append("color", selectedColor.toString());
-        if (selectedSize != null) params.append("size", selectedSize.toString());
+        if (selectedCategories.length >  0) params.append("categories", selectedCategories.toString());
         if (priceRange[0] > 0) params.append("minPrice", priceRange[0].toString());
         if (priceRange[1] < 500) params.append("maxPrice", priceRange[1].toString());
         url = `http://localhost:8080/api/products/filter?currentPage=${currentPage}&pageSize=${pageSize}&${params.toString()}`;
+        if(sortBy === "price-low"){
+          url = `http://localhost:8080/api/products/sort-price-asc/filter?currentPage=${currentPage}&pageSize=${pageSize}&${params.toString()}`;
+        }else if(sortBy === "price-high"){
+          url = `http://localhost:8080/api/products/sort-price-desc/filter?currentPage=${currentPage}&pageSize=${pageSize}&${params.toString()}`;
+    
+        }
     }
   
     axios.get(url)
@@ -86,7 +88,7 @@ export default function Products() {
         setTotalElements(response.data.totalElements);
       })
       .catch(error => console.error("Lỗi khi fetch sản phẩm:", error));
-  }, [currentPage, selectedCategories, selectedColor, selectedSize, priceRange,sortBy]);
+  }, [currentPage, selectedCategories, priceRange,sortBy]);
   
   useEffect(() => {
     axios.get('http://localhost:8080/api/categories')
@@ -101,31 +103,9 @@ export default function Products() {
       });
   }, []);
 
-  useEffect(() => {
-    axios.get('http://localhost:8080/api/colors')
-      .then(response => {
-        setColors(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("Lỗi khi fetch sản phẩm:", error);
-        setError(error);
-        setLoading(false);
-      });
-  }, []);
 
-  useEffect(() => {
-    axios.get('http://localhost:8080/api/sizes')
-      .then(response => {
-        setSizes(response.data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error("Lỗi khi fetch sản phẩm:", error);
-        setError(error);
-        setLoading(false);
-      });
-  }, []);
+
+  
 
   const toggleCategory = (category: number) => {
     setSelectedCategories(prev => 
@@ -189,38 +169,9 @@ export default function Products() {
               </div>
             </div>
 
-            {/* Colors */}
-            <div className="mb-6">
-              <h3 className="font-medium mb-3">Colors</h3>
-              <div className="flex flex-wrap gap-2">
-                {colors.map((color:any) => (
-                  <button
-                    key={color.id}
-                    onClick={() => setSelectedColor(prev => prev === color.id ? null : color.id)}
-                    className={`w-8 h-8 rounded-full border hover:scale-150 transition-transform ${color.id === selectedColor ? 'scale-150' : 'hover:scale-150'}`}
-                    style={{ backgroundColor: color.name }}
+           
 
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Sizes */}
-            <div>
-              <h3 className="font-medium mb-3">Sizes</h3>
-              <div className="flex flex-wrap gap-2">
-                
-                {sizes.map((size:any) => (
-                  <button
-                    key={size.id}
-                    onClick={() => setSelectedSize(prev => prev === size.id ? null : size.id)}
-                    className={`min-w-[40px] h-10 border rounded-md hover:bg-black hover:text-white transition-colors ${size.id === selectedSize ? 'bg-black text-white' : 'bg-white text-black'}`}
-                  >
-                    {size.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+         
           </div>
         </div>
 
@@ -271,7 +222,8 @@ export default function Products() {
               >
                 <div className={`relative ${viewMode === 'list' ? 'w-1/3' : ''}`}>
                   <img
-                    src={product.image}
+
+                    src={`http://localhost:8080/api/images/${product.images[0].imageUrl}`}
                     alt={product.name}
                     className="w-full aspect-[3/4] object-cover"
                   />
@@ -290,8 +242,7 @@ export default function Products() {
                   {viewMode === 'list' && (
                     <>
                       <p className="text-gray-500 mb-4">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                      </p>
+                        {product.description}                      </p>
                       <button className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 transition-colors">
                         Add to Cart
                       </button>

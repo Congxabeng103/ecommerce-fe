@@ -5,36 +5,29 @@ import { useParams } from "react-router-dom";
 
 export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('');
+  const [selectedColor, setSelectedColor] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [products, setProducts] = useState<products | null>(null);
+  const [products, setProducts] = useState([]);
+  const [sizes, setSizes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams(); // Lấy id từ URL
-  type Category = {
-    id: number;
-    name: string;
-  };
+  // type Category = {
+  //   id: number;
+  //   name: string;
+  // };
   
-  type Color = {
-    id: number;
-    name: string;
-  };
+ 
   
-  type Size = {
-    id: number;
-    name: string;
-  };
+  // type products = {
+  //   id: number;
+  //   name: string;
+  //   price: number;
+  //   image: string;
   
-  type products = {
-    id: number;
-    name: string;
-    price: number;
-    image: string;
-    size: Size;
-    color: Color;
-    category: Category;
-  };
+  //   category: Category;
+  // };
   
   
   
@@ -50,91 +43,74 @@ export default function ProductDetail() {
         setLoading(false);
       });
       
-  },[]);
+  },[id]);
 
-  const product = {
-    name: "Classic White Shirt",
-    price: "59.99",
-    description: "A timeless classic white shirt crafted from premium cotton. Features a regular fit, classic collar, and button-up front. Perfect for both casual and formal occasions.",
-    sizes: ['XS', 'S', 'M', 'L', 'XL'],
-    colors: ['White', 'Light Blue', 'Black'],
-    images: [
-      "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1563630423918-b58f07336ac9?auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1604695573706-53170668f6a6?auto=format&fit=crop&q=80"
-    ],
-    details: [
-      "100% Premium Cotton",
-      "Regular Fit",
-      "Button-Up Front",
-      "Classic Collar",
-      "Machine Washable"
-    ]
-  };
+  
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedColor!=='') params.append("color", selectedColor.toString());
+    if (selectedSize!=='') params.append("size", selectedSize.toString());
+    let url= `http://localhost:8080/api/products/${id}/filter?${params.toString()}`;
+        axios.get(url)
+      .then(response => {
+        setSizes(response.data);
+        setLoading(false);
+      })
+      .catch(error => {
+        console.error("Lỗi khi fetch sản phẩm:", error);
+        setError(error);
+        setLoading(false);
+      });
+      
+  },[selectedColor,id]);
 
-  const relatedProducts = [
-    {
-      name: "Striped Oxford Shirt",
-      price: "64.99",
-      image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?auto=format&fit=crop&q=80"
-    },
-    {
-      name: "Blue Business Shirt",
-      price: "54.99",
-      image: "https://images.unsplash.com/photo-1608744882201-52a7f7f3dd60?auto=format&fit=crop&q=80"
-    },
-    {
-      name: "Casual Linen Shirt",
-      price: "49.99",
-      image: "https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&q=80"
-    },
-    {
-      name: "Formal White Shirt",
-      price: "69.99",
-      image: "https://images.unsplash.com/photo-1621072156002-e2fccdc0b176?auto=format&fit=crop&q=80"
-    }
-  ];
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
-  if (!products) return <p>Không tìm thấy sản phẩm.</p>;
+  if (products.length === 0) return <p>Không tìm thấy sản phẩm.</p>;
 
   return (
     <main className="flex-grow">
       {/* Breadcrumb */}
-     
+                  
+                 
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center text-sm text-gray-500">
           <a href="/" className="hover:text-black">Home</a>
           <ChevronRight className="h-4 w-4 mx-2" />
-          <a href="/products" className="hover:text-black">Men's Shirts</a>
+          <a href="/products" className="hover:text-black">{products[0].productInfo.category.name}</a>
           <ChevronRight className="h-4 w-4 mx-2" />
-          <span className="text-black">{products.name}</span>
+
+          <span className="text-black">{products[0].productInfo.name}</span>
+
         </div>
       </div>
 
       {/* Product Section */}
+
       <section className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
+
           <div className="space-y-4">
             <div className="aspect-square overflow-hidden rounded-lg">
+
               <img
-                src={product.images[selectedImage]}
-                alt={product.name}
+                src={`http://localhost:8080/api/images/${products[0].productInfo.images[selectedImage].imageUrl}`}
+                alt={products[0].productInfo.name}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {product.images.map((image, index) => (
+              {products[0].productInfo.images.map((image: any) => (
                 <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
+                  key={image.id}
+                  onClick={() => setSelectedImage(image.id-1)}
                   className={`aspect-square rounded-lg overflow-hidden border-2 ${
-                    selectedImage === index ? 'border-black' : 'border-transparent'
+                    selectedImage === image.id-1 ? 'border-black' : 'border-transparent'
                   }`}
                 >
-                  <img src={image} alt={`${product.name} ${index + 1}`} className="w-full h-full object-cover" />
+
+                  <img src={`http://localhost:8080/api/images/${image.imageUrl}`} alt={`${products[0].productInfo.name} ${image.id}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -143,22 +119,25 @@ export default function ProductDetail() {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-              <p className="text-2xl">${product.price}</p>
+              <h1 className="text-3xl font-bold mb-2">{products[0].productInfo.name}</h1>
+              <p className="text-2xl">${products[0].productInfo.price}</p>
             </div>
 
-            <p className="text-gray-600">{product.description}</p>
+            <p className="text-gray-600">{products[0].productInfo.description}</p>
 
             {/* Color Selection */}
             <div>
               <h3 className="font-medium mb-3">Color</h3>
               <div className="flex space-x-2">
-                {product.colors.map((color) => (
+                {products.map(( product : any, index :any) => (
                   <button
-                    key={color}
-                    className="px-4 py-2 border rounded-md hover:border-black"
+                    key={index}
+                    onClick={() => setSelectedColor(selectedColor === product.color ? '' : product.color)}
+                    className={`px-4 py-2 border rounded-md hover:border-black ${
+                        selectedColor === product.color ? 'border-black bg-black text-white' : ''
+                      }`}
                   >
-                    {color}
+                    {product.color}
                   </button>
                 ))}
               </div>
@@ -171,20 +150,23 @@ export default function ProductDetail() {
                 <button className="text-sm text-gray-600 underline">Size Guide</button>
               </div>
               <div className="grid grid-cols-5 gap-2">
-                {product.sizes.map((size) => (
+                {products.map((product : any, index :any) => (
+
                   <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
+                    key={index}
+                    onClick={() => setSelectedSize(selectedSize === product.size ? '' : product.size)}
+                  
+
                     className={`py-2 border rounded-md hover:border-black ${
-                      selectedSize === size ? 'border-black bg-black text-white' : ''
+                      selectedSize === product.size ? 'border-black bg-black text-white' : ''
                     }`}
                   >
-                    {size}
+                    {product.size}
                   </button>
-                ))}
+              ))}
+
               </div>
             </div>
-
             {/* Quantity */}
             <div>
               <h3 className="font-medium mb-3">Quantity</h3>
@@ -219,20 +201,20 @@ export default function ProductDetail() {
             </div>
 
             {/* Product Details */}
-            <div className="border-t pt-6">
+            {/* <div className="border-t pt-6">
               <h3 className="font-medium mb-3">Product Details</h3>
               <ul className="list-disc list-inside space-y-2 text-gray-600">
                 {product.details.map((detail, index) => (
                   <li key={index}>{detail}</li>
                 ))}
               </ul>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
 
       {/* Related Products */}
-      <section className="bg-gray-50 py-16">
+      {/* <section className="bg-gray-50 py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold mb-8">You May Also Like</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -257,7 +239,7 @@ export default function ProductDetail() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
     </main>
   );
 }
